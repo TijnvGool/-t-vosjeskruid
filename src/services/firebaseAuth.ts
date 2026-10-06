@@ -8,7 +8,7 @@ import {
 } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSYAB5-YqPxgB_rbNF2GchGQz4ba4jpROQFQ",
+  apiKey: "AIzaSyBCBcdjILzgc_uvXVUUd8kSj7Xn4pQjEKU",
   authDomain: "t-vosjeskruid.firebaseapp.com",
   projectId: "t-vosjeskruid",
   storageBucket: "t-vosjeskruid.firebasestorage.app",
