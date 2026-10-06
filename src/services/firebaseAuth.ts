@@ -56,15 +56,9 @@ export const signInAdmin = async (email: string, password: string): Promise<{ em
         uid: userCredential.user.uid,
       };
     } catch (err: any) {
-      let message = 'Inloggen mislukt. Controleer je e-mailadres en wachtwoord.';
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        message = 'Onjuist e-mailadres of wachtwoord.';
-      } else if (err.code === 'auth/invalid-email') {
-        message = 'Ongeldig e-mailadres formaat.';
-      } else if (err.code === 'auth/too-many-requests') {
-        message = 'Te veel mislukte inlogpogingen. Probeer het later opnieuw.';
-      }
-      throw new Error(message);
+      const errorCode = err.code || 'onbekende-code';
+      const errorMessage = err.message || String(err);
+      throw new Error(`Firebase fout: ${errorCode} — ${errorMessage}`);
     }
   }
 
