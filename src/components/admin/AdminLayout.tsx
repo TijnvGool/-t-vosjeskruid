@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore, AdminTab } from '../../context/StoreContext';
 import { isFirebaseConfigured } from '../../services/firebaseAuth';
+import { Product, ProductType, ApplicationCategory } from '../../types';
 import { 
   LayoutDashboard, 
   Package, 
@@ -19,7 +20,13 @@ import {
   AlertCircle,
   ArrowRight,
   TrendingUp,
-  ArrowLeft
+  ArrowLeft,
+  Plus,
+  Edit2,
+  Trash2,
+  Check,
+  Eye,
+  AlertTriangle
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
@@ -34,10 +41,124 @@ export const AdminLayout: React.FC = () => {
     orders,
     reviews,
     siteContent,
+    addProduct,
+    updateProduct,
+    deleteProduct,
   } = useStore();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const firebaseReady = isFirebaseConfigured();
+
+  // Product CRUD Modal & Form State
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [formName, setFormName] = useState('');
+  const [formSubtitle, setFormSubtitle] = useState('');
+  const [formShortDesc, setFormShortDesc] = useState('');
+  const [formLongDesc, setFormLongDesc] = useState('');
+  const [formPrice, setFormPrice] = useState('14.95');
+  const [formStock, setFormStock] = useState('25');
+  const [formVolume, setFormVolume] = useState('50 ml');
+  const [formProductType, setFormProductType] = useState<ProductType>('Tinctuur');
+  const [formCategory, setFormCategory] = useState<ApplicationCategory>('Rust & Slaap');
+  const [formUsage, setFormUsage] = useState('');
+  const [formIngredients, setFormIngredients] = useState('Goudsbloem, Biologische alcohol, Bronwater');
+  const [formImage, setFormImage] = useState('images/products/tinctuur.svg');
+  const [formInStock, setFormInStock] = useState(true);
+
+  const openNewProductModal = () => {
+    setEditingProductId(null);
+    setFormName('');
+    setFormSubtitle('Ambachtelijk bereid in Brabant');
+    setFormShortDesc('');
+    setFormLongDesc('');
+    setFormPrice('14.95');
+    setFormStock('25');
+    setFormVolume('50 ml');
+    setFormProductType('Tinctuur');
+    setFormCategory('Rust & Slaap');
+    setFormUsage('Neem 15-20 druppels in een beetje water, 2 tot 3 keer per dag.');
+    setFormIngredients('Biologische kruiden, Bronwater, Alcohol 35%');
+    setFormImage('images/products/tinctuur.svg');
+    setFormInStock(true);
+    setIsProductModalOpen(true);
+  };
+
+  const openEditProductModal = (p: Product) => {
+    setEditingProductId(p.id);
+    setFormName(p.name);
+    setFormSubtitle(p.subtitle || '');
+    setFormShortDesc(p.shortDescription || '');
+    setFormLongDesc(p.longDescription || '');
+    setFormPrice(p.price.toString());
+    setFormStock(p.stock.toString());
+    setFormVolume(p.volume || '50 ml');
+    setFormProductType(p.productType || 'Tinctuur');
+    setFormCategory(p.applicationCategory || 'Rust & Slaap');
+    setFormUsage(p.usageInstructions || '');
+    setFormIngredients((p.ingredients || []).join(', '));
+    setFormImage(p.images?.[0] || 'images/products/tinctuur.svg');
+    setFormInStock(p.inStock ?? true);
+    setIsProductModalOpen(true);
+  };
+
+  const handleSaveProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formName.trim()) return;
+
+    const ingredientsList = formIngredients.split(',').map(s => s.trim()).filter(Boolean);
+    const parsedPrice = parseFloat(formPrice) || 10.0;
+    const parsedStock = parseInt(formStock, 10) || 0;
+
+    if (editingProductId) {
+      updateProduct(editingProductId, {
+        name: formName,
+        subtitle: formSubtitle,
+        shortDescription: formShortDesc,
+        longDescription: formLongDesc,
+        price: parsedPrice,
+        stock: parsedStock,
+        volume: formVolume,
+        productType: formProductType,
+        applicationCategory: formCategory,
+        usageInstructions: formUsage,
+        ingredients: ingredientsList,
+        images: [formImage],
+        inStock: formInStock,
+      });
+    } else {
+      addProduct({
+        slug: formName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        name: formName,
+        subtitle: formSubtitle,
+        shortDescription: formShortDesc,
+        longDescription: formLongDesc,
+        price: parsedPrice,
+        stock: parsedStock,
+        inStock: formInStock,
+        volume: formVolume,
+        productType: formProductType,
+        applicationCategory: formCategory,
+        herbIds: [],
+        relatedProductIds: [],
+        usageInstructions: formUsage,
+        ingredients: ingredientsList,
+        images: [formImage],
+        badge: 'Ambachtelijk',
+      });
+    }
+    setIsProductModalOpen(false);
+  };
+
+  const handleDeleteProduct = (id: string, name: string) => {
+    if (window.confirm(`Weet je zeker dat je "${name}" wilt verwijderen uit de webshop?`)) {
+      deleteProduct(id);
+    }
+  };
+
+  const toggleProductStock = (p: Product) => {
+    updateProduct(p.id, { inStock: !p.inStock });
+  };
 
   const handleTabClick = (tab: AdminTab) => {
     setAdminTab(tab);
@@ -432,16 +553,19 @@ export const AdminLayout: React.FC = () => {
             <div className="space-y-6 animate-in fade-in duration-150">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="font-serif text-2xl text-[#1E2E1D]">Productenoverzicht</h2>
+                  <h2 className="font-serif text-2xl text-[#1E2E1D]">Productbeheer</h2>
                   <p className="text-xs text-[#5D6B5A]">
-                    Totaal {products.length} actieve producten in de webshop van 't Vosjeskruid.
+                    Beheer alle producten van 't Vosjeskruid. Wijzigingen worden direct opgeslagen in de database.
                   </p>
                 </div>
 
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF8F5] border border-[#D5CDBD] text-[#4A5947] rounded-lg text-xs font-medium">
-                  <Clock className="w-3.5 h-3.5 text-[#7A643A]" />
-                  <span>Binnenkort beschikbaar: Nieuw product toevoegen &amp; bewerken</span>
-                </div>
+                <button
+                  onClick={openNewProductModal}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#4A5D3E] text-white rounded-xl text-xs font-medium hover:bg-[#3B4C30] transition-all shadow-xs cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Nieuw product toevoegen</span>
+                </button>
               </div>
 
               <div className="bg-white border border-[#E0D7CB] rounded-2xl overflow-hidden shadow-xs">
@@ -451,34 +575,62 @@ export const AdminLayout: React.FC = () => {
                       <tr>
                         <th className="py-3 px-4">Product</th>
                         <th className="py-3 px-4">Type</th>
-                        <th className="py-3 px-4">Toepassing</th>
+                        <th className="py-3 px-4">Categorie</th>
                         <th className="py-3 px-4">Prijs</th>
                         <th className="py-3 px-4">Voorraad</th>
-                        <th className="py-3 px-4 text-right">Status</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Acties</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#F0EAE1]">
-                      {products.slice(0, 15).map((p) => (
+                      {products.map((p) => (
                         <tr key={p.id} className="hover:bg-[#FAF8F5]">
                           <td className="py-3 px-4 flex items-center gap-3">
-                            <img src={p.images[0]} alt={p.name} className="w-9 h-9 object-cover rounded bg-[#E4DDD0] shrink-0" />
+                            <img src={p.images[0]} alt={p.name} className="w-10 h-10 object-cover rounded-lg bg-[#E4DDD0] shrink-0 border border-[#E0D7CB]" />
                             <div>
                               <span className="font-medium text-[#1E2E1D] block">{p.name}</span>
-                              <span className="text-[11px] text-[#71806F]">{p.volume}</span>
+                              <span className="text-[11px] text-[#71806F]">{p.volume} · {p.subtitle}</span>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-[#556553]">{p.productType}</td>
+                          <td className="py-3 px-4 text-[#556553] font-medium">{p.productType}</td>
                           <td className="py-3 px-4 text-[#556553]">{p.applicationCategory}</td>
                           <td className="py-3 px-4 font-semibold text-[#1E2E1D] tabular-nums">
                             €{p.price.toFixed(2)}
                           </td>
                           <td className="py-3 px-4 tabular-nums">
-                            {p.stock} stuks
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <span className="px-2 py-0.5 rounded text-[10px] bg-[#E3EFE0] text-[#33562A] font-medium">
-                              In Webshop
+                            <span className={p.stock < 5 ? 'text-amber-700 font-semibold' : 'text-[#243323]'}>
+                              {p.stock} stuks
                             </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={() => toggleProductStock(p)}
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-colors cursor-pointer inline-flex items-center gap-1 ${
+                                p.inStock !== false && p.stock > 0
+                                  ? 'bg-[#E3EFE0] text-[#33562A] hover:bg-[#d4e4d0]'
+                                  : 'bg-[#FBEBEB] text-[#8C3A3A] hover:bg-[#f6dfdf]'
+                              }`}
+                              title="Klik om te activeren/deactiveren"
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${p.inStock !== false && p.stock > 0 ? 'bg-[#33562A]' : 'bg-[#8C3A3A]'}`} />
+                              {p.inStock !== false && p.stock > 0 ? 'Actief' : 'Uitverkocht'}
+                            </button>
+                          </td>
+                          <td className="py-3 px-4 text-right space-x-2">
+                            <button
+                              onClick={() => openEditProductModal(p)}
+                              className="p-1.5 bg-[#FAF8F5] border border-[#D5CDBD] text-[#4A5D3E] hover:bg-[#4A5D3E] hover:text-white rounded-lg transition-colors cursor-pointer inline-flex items-center"
+                              title="Bewerken"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(p.id, p.name)}
+                              className="p-1.5 bg-[#FAF8F5] border border-[#EED7D7] text-[#9E3A3A] hover:bg-[#9E3A3A] hover:text-white rounded-lg transition-colors cursor-pointer inline-flex items-center"
+                              title="Verwijderen"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -760,6 +912,210 @@ export const AdminLayout: React.FC = () => {
           )}
         </div>
       </main>
+
+      {/* Product Add/Edit Modal */}
+      {isProductModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-[#E0D7CB] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="p-6 border-b border-[#E8E2D9] flex items-center justify-between sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#EFE9DF] text-[#4A5D3E] flex items-center justify-center">
+                  <Package className="w-4 h-4" />
+                </div>
+                <h3 className="font-serif text-xl text-[#1E2E1D]">
+                  {editingProductId ? 'Product bewerken' : 'Nieuw product toevoegen'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsProductModalOpen(false)}
+                className="p-2 text-[#71806F] hover:text-[#1E2E1D] rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProduct} className="p-6 space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-[#1E2E1D]">Productnaam *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    placeholder="Bijv. Vlierbes & Echinacea Tinctuur"
+                    className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-[#1E2E1D]">Subtitel / Korte kenmerk</label>
+                  <input
+                    type="text"
+                    value={formSubtitle}
+                    onChange={(e) => setFormSubtitle(e.target.value)}
+                    placeholder="Bijv. Natuurlijke weerstand"
+                    className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-[#1E2E1D]">Prijs (€) *</label>
+                  <input
+                    type="number"
+                    step="0.05"
+                    required
+                    value={formPrice}
+                    onChange={(e) => setFormPrice(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-[#1E2E1D]">Voorraad (stuks) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={formStock}
+                    onChange={(e) => setFormStock(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-[#1E2E1D]">Eenheid / Inhoud *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formVolume}
+                    onChange={(e) => setFormVolume(e.target.value)}
+                    placeholder="Bijv. 50 ml of 100 g"
+                    className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-[#1E2E1D]">Producttype</label>
+                  <select
+                    value={formProductType}
+                    onChange={(e) => setFormProductType(e.target.value as ProductType)}
+                    className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                  >
+                    <option value="Tinctuur">Tinctuur</option>
+                    <option value="Zalf">Zalf</option>
+                    <option value="Kruidenthee">Kruidenthee</option>
+                    <option value="Olie & Maceraat">Olie &amp; Maceraat</option>
+                    <option value="Balsem">Balsem</option>
+                    <option value="Crème">Crème</option>
+                    <option value="Kruidenzakje & Bad">Kruidenzakje &amp; Bad</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-[#1E2E1D]">Categorie / Toepassing</label>
+                  <select
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value as ApplicationCategory)}
+                    className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                  >
+                    <option value="Rust & Slaap">Rust &amp; Slaap</option>
+                    <option value="Weerstand & Luchtwegen">Weerstand &amp; Luchtwegen</option>
+                    <option value="Huid & Verzorging">Huid &amp; Verzorging</option>
+                    <option value="Spijsvertering & Buik">Spijsvertering &amp; Buik</option>
+                    <option value="Spieren & Gewrichten">Spieren &amp; Gewrichten</option>
+                    <option value="Vitaliteit & Focus">Vitaliteit &amp; Focus</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block font-medium text-[#1E2E1D]">Korte beschrijving</label>
+                <input
+                  type="text"
+                  value={formShortDesc}
+                  onChange={(e) => setFormShortDesc(e.target.value)}
+                  placeholder="Korte samenvatting voor in de productkaart..."
+                  className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block font-medium text-[#1E2E1D]">Volledige beschrijving</label>
+                <textarea
+                  rows={3}
+                  value={formLongDesc}
+                  onChange={(e) => setFormLongDesc(e.target.value)}
+                  placeholder="Uitgebreide werking, achtergrond en eigenschappen..."
+                  className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block font-medium text-[#1E2E1D]">Ingrediënten (komma-gescheiden)</label>
+                <input
+                  type="text"
+                  value={formIngredients}
+                  onChange={(e) => setFormIngredients(e.target.value)}
+                  placeholder="Bijv. Goudsbloem, Biologische alcohol, Bronwater"
+                  className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block font-medium text-[#1E2E1D]">Gebruik &amp; Toepassing</label>
+                <input
+                  type="text"
+                  value={formUsage}
+                  onChange={(e) => setFormUsage(e.target.value)}
+                  placeholder="Bijv. 15 druppels in water innemen..."
+                  className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                <div className="space-y-1.5">
+                  <label className="block font-medium text-[#1E2E1D]">Afbeeldingsreferentie / Pad</label>
+                  <input
+                    type="text"
+                    value={formImage}
+                    onChange={(e) => setFormImage(e.target.value)}
+                    placeholder="images/products/tinctuur.svg"
+                    className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#D5CDBD] rounded-xl text-[#1E2E1D] focus:outline-none focus:border-[#4A5D3E]"
+                  />
+                </div>
+                <div className="flex items-center gap-2 pt-5">
+                  <input
+                    type="checkbox"
+                    id="inStockCheck"
+                    checked={formInStock}
+                    onChange={(e) => setFormInStock(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#4A5D3E] focus:ring-[#4A5D3E]"
+                  />
+                  <label htmlFor="inStockCheck" className="font-medium text-[#1E2E1D] cursor-pointer">
+                    Direct actief in webshop
+                  </label>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-[#E8E2D9] flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsProductModalOpen(false)}
+                  className="px-4 py-2 bg-[#FAF8F5] border border-[#D5CDBD] text-[#556453] rounded-xl font-medium hover:bg-[#F0EAE1] cursor-pointer"
+                >
+                  Annuleren
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#4A5D3E] text-white rounded-xl font-medium hover:bg-[#3B4C30] cursor-pointer shadow-xs"
+                >
+                  {editingProductId ? 'Wijzigingen opslaan' : 'Product toevoegen'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

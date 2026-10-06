@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   User 
 } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBCBcdjILzgc_uvXVUUd8kSj7Xn4pQjEKU",
@@ -23,6 +24,7 @@ export const isFirebaseConfigured = (): boolean => {
 // Explicitly initialize one Firebase app for test verification
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 
 console.log("Firebase Init Success Test:", {
   projectId: firebaseConfig.projectId,

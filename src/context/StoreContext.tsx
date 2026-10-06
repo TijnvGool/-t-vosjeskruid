@@ -6,8 +6,18 @@ import {
   signInAdmin, 
   signOutAdmin, 
   getActiveAdminSession, 
-  subscribeToAuthChanges 
+  subscribeToAuthChanges,
+  db
 } from '../services/firebaseAuth';
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot
+} from 'firebase/firestore';
 
 export type Route = 
   | 'home' 
@@ -151,19 +161,46 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   // Entities with fallback and automatic image resolution
-  const [products, setProducts] = useState<Product[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS) || localStorage.getItem('vosjeskruid_products_v1');
-      if (!saved) return initialProducts;
-      const parsed: Product[] = JSON.parse(saved);
-      return parsed.map(p => ({
-        ...p,
-        images: (p.images || []).map(img => resolveImageUrl(img))
-      }));
-    } catch {
-      return initialProducts;
-    }
-  });
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+
+  // Firestore Products Sync & One-time Migration
+  useEffect(() => {
+    const colRef = collection(db, 'products');
+
+    getDocs(colRef).then(snapshot => {
+      if (snapshot.empty) {
+        initialProducts.forEach(async (p) => {
+          try {
+            await setDoc(doc(db, 'products', p.id), p);
+          } catch (e) {
+            console.error('Error seeding product:', p.id, e);
+          }
+        });
+      }
+    }).catch(err => {
+      console.error('Error checking products collection in Firestore:', err);
+    });
+
+    const unsubscribe = onSnapshot(colRef, (snapshot) => {
+      const items: Product[] = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data() as Product;
+        items.push({
+          ...data,
+          id: docSnap.id,
+          images: (data.images || []).map(img => resolveImageUrl(img))
+        });
+      });
+      if (items.length > 0) {
+        setProducts(items);
+      }
+    }, (error) => {
+      console.error('Firestore products snapshot error:', error);
+      showToast('Kan geen verbinding maken met Firestore database voor producten.', 'warn');
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const [herbs, setHerbs] = useState<Herb[]>(() => {
     try {
@@ -255,10 +292,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart));
   }, [cart]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
-  }, [products]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.HERBS, JSON.stringify(herbs));
@@ -471,28 +504,47 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     logoutAdminAsync();
   };
 
-  // CRUD Product
-  const addProduct = (data: Omit<Product, 'id' | 'rating' | 'reviewCount'>) => {
-    const newProduct: Product = {
-      ...data,
-      id: `p-${Date.now()}`,
-      rating: 5.0,
-      reviewCount: 0,
-    };
-    setProducts(prev => [newProduct, ...prev]);
-    showToast(`Product "${newProduct.name}" succesvol aangemaakt`);
+  // CRUD Product (Firestore)
+  const addProduct = async (data: Omit<Product, 'id' | 'rating' | 'reviewCount'>) => {
+    try {
+      const newId = `p-${Date.now()}`;
+      const newProduct: Product = {
+        ...data,
+        id: newId,
+        rating: 5.0,
+        reviewCount: 0,
+      };
+      await setDoc(doc(db, 'products', newId), newProduct);
+      showToast('Product toegevoegd', 'success');
+    } catch (err: any) {
+      console.error('Error adding product to Firestore:', err);
+      showToast(`Fout bij toevoegen product: ${err?.message || 'Onbekende fout'}`, 'warn');
+      throw err;
+    }
   };
 
-  const updateProduct = (id: string, updates: Partial<Product>) => {
-    setProducts(prev =>
-      prev.map(p => (p.id === id ? { ...p, ...updates } : p))
-    );
-    showToast('Product succesvol bijgewerkt');
+  const updateProduct = async (id: string, updates: Partial<Product>) => {
+    try {
+      const docRef = doc(db, 'products', id);
+      await updateDoc(docRef, updates);
+      showToast('Product opgeslagen', 'success');
+    } catch (err: any) {
+      console.error('Error updating product in Firestore:', err);
+      showToast(`Fout bij opslaan product: ${err?.message || 'Onbekende fout'}`, 'warn');
+      throw err;
+    }
   };
 
-  const deleteProduct = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
-    showToast('Product verwijderd', 'info');
+  const deleteProduct = async (id: string) => {
+    try {
+      const docRef = doc(db, 'products', id);
+      await deleteDoc(docRef);
+      showToast('Product verwijderd', 'info');
+    } catch (err: any) {
+      console.error('Error deleting product from Firestore:', err);
+      showToast(`Fout bij verwijderen product: ${err?.message || 'Onbekende fout'}`, 'warn');
+      throw err;
+    }
   };
 
   // CRUD Herb
