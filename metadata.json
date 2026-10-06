@@ -1,0 +1,6 @@
+{
+  "name": "'t Vosjeskruid - Ambachtelijke Kruiden & Natuurproducten",
+  "description": "Rustige en moderne botanische webshop, kruidencatalogus en persoonlijke kennisomgeving van 't Vosjeskruid.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
