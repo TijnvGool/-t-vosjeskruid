@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { ProductType, ApplicationCategory } from '../../types';
+import { resolveImageUrl } from '../../assets/images';
 import { Search, ShoppingBag, SlidersHorizontal, X, ArrowUpDown } from 'lucide-react';
 
 export const ProductListView: React.FC = () => {
@@ -429,7 +430,7 @@ export const ProductListView: React.FC = () => {
                       {/* Product Image */}
                       <div className="relative aspect-4/3 bg-[#EFE9DF] overflow-hidden">
                         <img
-                          src={product.images[0]}
+                          src={resolveImageUrl(product.images[0])}
                           alt={product.name}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
                           referrerPolicy="no-referrer"

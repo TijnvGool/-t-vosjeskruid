@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '../../context/StoreContext';
+import { resolveImageUrl } from '../../assets/images';
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 
 export const CartDrawer: React.FC = () => {
@@ -97,7 +98,7 @@ export const CartDrawer: React.FC = () => {
               cart.map((item) => (
                 <div key={item.product.id} className="py-4 flex gap-4 items-start">
                   <img
-                    src={item.product.images[0]}
+                    src={resolveImageUrl(item.product.images[0])}
                     alt={item.product.name}
                     className="w-16 h-16 object-cover rounded-md border border-[#E0D7C9] bg-[#EAE3D6] shrink-0"
                     referrerPolicy="no-referrer"

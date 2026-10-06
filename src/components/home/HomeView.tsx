@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore } from '../../context/StoreContext';
 import { ApplicationCategory } from '../../types';
+import { resolveImageUrl } from '../../assets/images';
 import { Sparkles, ArrowRight, ShoppingBag, Star, Leaf, Check } from 'lucide-react';
 
 export const HomeView: React.FC = () => {
@@ -93,7 +94,7 @@ export const HomeView: React.FC = () => {
           <div className="lg:col-span-5 relative">
             <div className="relative mx-auto max-w-md lg:max-w-none rounded-2xl overflow-hidden shadow-xl border border-[#E0D7C9] bg-[#E9E2D5]">
               <img
-                src={siteContent.hero.image}
+                src={resolveImageUrl(siteContent.hero.image)}
                 alt="Botanische kruidentafel van 't Vosjeskruid"
                 className="w-full h-[360px] sm:h-[480px] object-cover transition-transform duration-500 hover:scale-102"
                 referrerPolicy="no-referrer"
@@ -202,7 +203,7 @@ export const HomeView: React.FC = () => {
               >
                 <div className="relative aspect-4/3 bg-[#EFE9DF] overflow-hidden">
                   <img
-                    src={prod.images[0]}
+                    src={resolveImageUrl(prod.images[0])}
                     alt={prod.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
                     referrerPolicy="no-referrer"
@@ -289,7 +290,7 @@ export const HomeView: React.FC = () => {
                 <div className="space-y-3">
                   <div className="aspect-4/3 rounded-lg overflow-hidden bg-[#E7E0D2]">
                     <img
-                      src={herb.image}
+                      src={resolveImageUrl(herb.image)}
                       alt={herb.name}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-104"
                       referrerPolicy="no-referrer"
@@ -367,7 +368,7 @@ export const HomeView: React.FC = () => {
         <div className="bg-[#FAF8F5] border border-[#E3DBD0] rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 shadow-xs">
           <div className="lg:col-span-5 relative bg-[#EBE4D8]">
             <img
-              src={siteContent.about.heroImage}
+              src={resolveImageUrl(siteContent.about.heroImage)}
               alt="Eline de Vos in de kruidentuin van 't Vosjeskruid"
               className="w-full h-full min-h-[320px] object-cover"
               referrerPolicy="no-referrer"

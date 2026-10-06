@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Product, Herb } from '../../types';
+import { resolveImageUrl } from '../../assets/images';
 import { X, Send, Sparkles, AlertCircle, ShoppingBag, ArrowRight } from 'lucide-react';
 
 interface ChatMessage {
@@ -233,7 +234,7 @@ export const HerbalAssistantModal: React.FC = () => {
                         >
                           <div className="flex gap-2.5 items-start">
                             <img
-                              src={prod.images[0]}
+                              src={resolveImageUrl(prod.images[0])}
                               alt={prod.name}
                               className="w-12 h-12 object-cover rounded bg-[#E4DDD0] shrink-0 border border-[#D5CDBD]"
                               referrerPolicy="no-referrer"

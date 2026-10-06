@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '../../context/StoreContext';
+import { resolveImageUrl } from '../../assets/images';
 import { Leaf, Heart, Sun, Wind, Droplets, BookOpen, ArrowRight } from 'lucide-react';
 
 export const AboutView: React.FC = () => {
@@ -48,7 +49,7 @@ export const AboutView: React.FC = () => {
         <div className="lg:col-span-6">
           <div className="relative rounded-2xl overflow-hidden shadow-xl border border-[#E0D7C9] bg-[#E9E2D5]">
             <img
-              src={about.heroImage}
+              src={resolveImageUrl(about.heroImage)}
               alt={about.signatureName}
               className="w-full h-[420px] sm:h-[500px] object-cover"
               referrerPolicy="no-referrer"

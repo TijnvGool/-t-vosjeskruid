@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Product, Herb, ProductType, ApplicationCategory, Order } from '../../types';
+import { HERO_IMAGE, TINCTURE_IMAGE, resolveImageUrl } from '../../assets/images';
 import { 
   Lock, LogOut, ArrowLeft, Plus, Edit2, Trash2, CheckCircle2, 
   Package, ShoppingBag, AlertTriangle, TrendingUp, RefreshCw, Eye
@@ -177,7 +178,7 @@ export const AdminDashboard: React.FC = () => {
       relatedProductIds: [],
       usageInstructions: '3 maal daags 20 druppels in water.',
       ingredientsStr: 'Biologische alcohol, extract van gedroogde bloemen, bronwater',
-      imagesStr: '/src/assets/images/product_tincture_amber_1791286167082.jpg',
+      imagesStr: TINCTURE_IMAGE,
       featured: false,
       badge: '',
     });
@@ -249,7 +250,7 @@ export const AdminDashboard: React.FC = () => {
         relatedProductIds: productFormData.relatedProductIds,
         usageInstructions: productFormData.usageInstructions,
         ingredients,
-        images: images.length > 0 ? images : ['/src/assets/images/product_tincture_amber_1791286167082.jpg'],
+        images: images.length > 0 ? images.map(img => resolveImageUrl(img)) : [TINCTURE_IMAGE],
         featured: productFormData.featured,
         badge: productFormData.badge,
       });
@@ -271,7 +272,7 @@ export const AdminDashboard: React.FC = () => {
       artisanGardenNotes: '',
       traditionalUsesStr: '',
       extractionMethodsStr: 'Drogen voor thee, alcoholextractie',
-      image: '/src/assets/images/hero_botanical_herbs_1791286124950.jpg',
+      image: HERO_IMAGE,
     });
     setHerbModalOpen(true);
   };
@@ -326,7 +327,7 @@ export const AdminDashboard: React.FC = () => {
         artisanGardenNotes: herbFormData.artisanGardenNotes,
         traditionalUses,
         extractionMethods,
-        image: herbFormData.image || '/src/assets/images/hero_botanical_herbs_1791286124950.jpg',
+        image: resolveImageUrl(herbFormData.image) || HERO_IMAGE,
       });
     }
     setHerbModalOpen(false);
@@ -543,7 +544,7 @@ export const AdminDashboard: React.FC = () => {
                     .map((p) => (
                       <tr key={p.id} className="hover:bg-[#F6F0E7]">
                         <td className="py-3 px-4 flex items-center gap-3">
-                          <img src={p.images[0]} alt={p.name} className="w-10 h-10 object-cover rounded bg-[#E4DDD0] shrink-0" />
+                          <img src={resolveImageUrl(p.images[0])} alt={p.name} className="w-10 h-10 object-cover rounded bg-[#E4DDD0] shrink-0" />
                           <div>
                             <span className="font-medium text-[#1E2E1D] block">{p.name}</span>
                             <span className="text-[11px] text-[#71806F]">{p.volume}</span>
@@ -618,7 +619,7 @@ export const AdminDashboard: React.FC = () => {
               <div key={h.id} className="bg-[#FAF8F5] border border-[#DDD3C3] rounded-xl p-5 space-y-3 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="aspect-4/3 rounded-lg overflow-hidden bg-[#EAE2D6]">
-                    <img src={h.image} alt={h.name} className="w-full h-full object-cover" />
+                    <img src={resolveImageUrl(h.image)} alt={h.name} className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <span className="text-[10px] text-[#71806F]">{h.family}</span>

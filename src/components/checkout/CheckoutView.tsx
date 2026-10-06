@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
+import { resolveImageUrl } from '../../assets/images';
 import { ArrowLeft, Check, ShieldCheck, ShoppingBag, Truck, CreditCard, ChevronRight } from 'lucide-react';
 
 export const CheckoutView: React.FC = () => {
@@ -109,7 +110,7 @@ export const CheckoutView: React.FC = () => {
             {latestOrder.items.map((item, idx) => (
               <div key={idx} className="flex items-center justify-between py-1 border-b border-[#F0EAE1]">
                 <div className="flex items-center gap-3">
-                  <img src={item.image} alt={item.productName} className="w-10 h-10 object-cover rounded bg-[#EAE2D6]" />
+                  <img src={resolveImageUrl(item.image)} alt={item.productName} className="w-10 h-10 object-cover rounded bg-[#EAE2D6]" />
                   <div>
                     <span className="font-medium text-[#1E2E1D]">{item.productName}</span>
                     <span className="text-[#71806F] block">{item.quantity}x {item.volume}</span>
@@ -448,7 +449,7 @@ export const CheckoutView: React.FC = () => {
             {cart.map((item) => (
               <div key={item.product.id} className="py-3 flex gap-3 items-center">
                 <img
-                  src={item.product.images[0]}
+                  src={resolveImageUrl(item.product.images[0])}
                   alt={item.product.name}
                   className="w-12 h-12 object-cover rounded-md bg-[#E8E1D3] shrink-0 border border-[#D5CDBD]"
                 />

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
+import { resolveImageUrl } from '../../assets/images';
 import { ShoppingBag, Star, Plus, Minus, ArrowLeft, Leaf, Check, Sparkles } from 'lucide-react';
 
 export const ProductDetailView: React.FC = () => {
@@ -83,7 +84,7 @@ export const ProductDetailView: React.FC = () => {
         <div className="lg:col-span-6 space-y-4">
           <div className="aspect-4/3 rounded-2xl overflow-hidden bg-[#EFE9DF] border border-[#E0D7C9] relative shadow-xs">
             <img
-              src={selectedImage || product.images[0]}
+              src={resolveImageUrl(selectedImage || product.images[0])}
               alt={product.name}
               className="w-full h-full object-cover transition-all duration-300"
               referrerPolicy="no-referrer"
@@ -108,7 +109,7 @@ export const ProductDetailView: React.FC = () => {
                       : 'border-transparent opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <img src={img} alt={`${product.name} foto ${idx + 1}`} className="w-full h-full object-cover" />
+                  <img src={resolveImageUrl(img)} alt={`${product.name} foto ${idx + 1}`} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -301,7 +302,7 @@ export const ProductDetailView: React.FC = () => {
                 className="bg-[#FAF8F5] border border-[#DDD3C3] rounded-xl p-5 hover:border-[#4A5D3E] hover:shadow-md transition-all cursor-pointer group flex gap-5 items-center"
               >
                 <img
-                  src={herb.image}
+                  src={resolveImageUrl(herb.image)}
                   alt={herb.name}
                   className="w-24 h-24 object-cover rounded-lg bg-[#EAE2D5] shrink-0 border border-[#D5CDBD]"
                   referrerPolicy="no-referrer"
@@ -353,7 +354,7 @@ export const ProductDetailView: React.FC = () => {
                 >
                   <div className="aspect-4/3 rounded-lg overflow-hidden bg-[#EAE3D6]">
                     <img
-                      src={rel.images[0]}
+                      src={resolveImageUrl(rel.images[0])}
                       alt={rel.name}
                       className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
                     />

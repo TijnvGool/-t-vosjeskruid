@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Product, Herb, Review, Order, SiteContent, CartItem, ApplicationCategory, ProductType } from '../types';
 import { initialProducts, initialHerbs, initialReviews, initialOrders, initialSiteContent } from '../data/mockData';
+import { resolveImageUrl } from '../assets/images';
 
 export type Route = 
   | 'home' 
@@ -77,6 +78,7 @@ interface StoreContextType {
   updateReviewStatus: (id: string, status: Review['status']) => void;
   deleteReview: (id: string) => void;
   resetToInitialData: () => void;
+  resolveImageUrl: (path?: string | null) => string;
 
   // Toast
   toast: Toast | null;
@@ -86,13 +88,13 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'vosjeskruid_products_v1',
-  HERBS: 'vosjeskruid_herbs_v1',
-  REVIEWS: 'vosjeskruid_reviews_v1',
-  ORDERS: 'vosjeskruid_orders_v1',
-  CONTENT: 'vosjeskruid_content_v1',
-  CART: 'vosjeskruid_cart_v1',
-  ADMIN_AUTH: 'vosjeskruid_admin_auth_v1',
+  PRODUCTS: 'vosjeskruid_products_v2',
+  HERBS: 'vosjeskruid_herbs_v2',
+  REVIEWS: 'vosjeskruid_reviews_v2',
+  ORDERS: 'vosjeskruid_orders_v2',
+  CONTENT: 'vosjeskruid_content_v2',
+  CART: 'vosjeskruid_cart_v2',
+  ADMIN_AUTH: 'vosjeskruid_admin_auth_v2',
 };
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -110,8 +112,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Cart
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CART);
-      return saved ? JSON.parse(saved) : [];
+      const saved = localStorage.getItem(STORAGE_KEYS.CART) || localStorage.getItem('vosjeskruid_cart_v1');
+      if (!saved) return [];
+      const parsed: CartItem[] = JSON.parse(saved);
+      return parsed.map(item => ({
+        ...item,
+        product: {
+          ...item.product,
+          images: (item.product?.images || []).map(img => resolveImageUrl(img))
+        }
+      }));
     } catch {
       return [];
     }
@@ -119,11 +129,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
-  // Entities with fallback
+  // Entities with fallback and automatic image resolution
   const [products, setProducts] = useState<Product[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-      return saved ? JSON.parse(saved) : initialProducts;
+      const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS) || localStorage.getItem('vosjeskruid_products_v1');
+      if (!saved) return initialProducts;
+      const parsed: Product[] = JSON.parse(saved);
+      return parsed.map(p => ({
+        ...p,
+        images: (p.images || []).map(img => resolveImageUrl(img))
+      }));
     } catch {
       return initialProducts;
     }
@@ -131,8 +146,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [herbs, setHerbs] = useState<Herb[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.HERBS);
-      return saved ? JSON.parse(saved) : initialHerbs;
+      const saved = localStorage.getItem(STORAGE_KEYS.HERBS) || localStorage.getItem('vosjeskruid_herbs_v1');
+      if (!saved) return initialHerbs;
+      const parsed: Herb[] = JSON.parse(saved);
+      return parsed.map(h => ({
+        ...h,
+        image: resolveImageUrl(h.image)
+      }));
     } catch {
       return initialHerbs;
     }
@@ -140,7 +160,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [reviews, setReviews] = useState<Review[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.REVIEWS);
+      const saved = localStorage.getItem(STORAGE_KEYS.REVIEWS) || localStorage.getItem('vosjeskruid_reviews_v1');
       return saved ? JSON.parse(saved) : initialReviews;
     } catch {
       return initialReviews;
@@ -149,8 +169,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ORDERS);
-      return saved ? JSON.parse(saved) : initialOrders;
+      const saved = localStorage.getItem(STORAGE_KEYS.ORDERS) || localStorage.getItem('vosjeskruid_orders_v1');
+      if (!saved) return initialOrders;
+      const parsed: Order[] = JSON.parse(saved);
+      return parsed.map(o => ({
+        ...o,
+        items: (o.items || []).map(i => ({
+          ...i,
+          image: resolveImageUrl(i.image)
+        }))
+      }));
     } catch {
       return initialOrders;
     }
@@ -158,8 +186,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [siteContent, setSiteContent] = useState<SiteContent>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CONTENT);
-      return saved ? JSON.parse(saved) : initialSiteContent;
+      const saved = localStorage.getItem(STORAGE_KEYS.CONTENT) || localStorage.getItem('vosjeskruid_content_v1');
+      if (!saved) return initialSiteContent;
+      const parsed: SiteContent = JSON.parse(saved);
+      return {
+        ...parsed,
+        hero: {
+          ...parsed.hero,
+          image: resolveImageUrl(parsed.hero?.image)
+        },
+        about: {
+          ...parsed.about,
+          heroImage: resolveImageUrl(parsed.about?.heroImage)
+        }
+      };
     } catch {
       return initialSiteContent;
     }
@@ -476,6 +516,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateReviewStatus,
         deleteReview,
         resetToInitialData,
+        resolveImageUrl,
         toast,
         showToast,
       }}

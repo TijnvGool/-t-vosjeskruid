@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
+import { resolveImageUrl } from '../../assets/images';
 import { Search, ArrowRight, Leaf, Sparkles } from 'lucide-react';
 
 export const HerbListView: React.FC = () => {
@@ -66,7 +67,7 @@ export const HerbListView: React.FC = () => {
                 <div className="space-y-3">
                   <div className="aspect-4/3 bg-[#EAE2D5] overflow-hidden relative">
                     <img
-                      src={herb.image}
+                      src={resolveImageUrl(herb.image)}
                       alt={herb.name}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-104"
                       referrerPolicy="no-referrer"

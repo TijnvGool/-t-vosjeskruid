@@ -1,9 +1,7 @@
 import { Product, Herb, Review, Order, SiteContent } from '../types';
+import { HERO_IMAGE, ABOUT_IMAGE, SALVE_IMAGE, TINCTURE_IMAGE, resolveImageUrl } from '../assets/images';
 
-export const HERO_IMAGE = '/src/assets/images/hero_botanical_herbs_1791286124950.jpg';
-export const ABOUT_IMAGE = '/src/assets/images/artisan_herbalist_garden_1791286139406.jpg';
-export const SALVE_IMAGE = '/src/assets/images/product_salve_jar_1791286153683.jpg';
-export const TINCTURE_IMAGE = '/src/assets/images/product_tincture_amber_1791286167082.jpg';
+export { HERO_IMAGE, ABOUT_IMAGE, SALVE_IMAGE, TINCTURE_IMAGE, resolveImageUrl };
 
 export const initialHerbs: Herb[] = [
   {

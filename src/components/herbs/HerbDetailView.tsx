@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '../../context/StoreContext';
+import { resolveImageUrl } from '../../assets/images';
 import { ArrowLeft, ArrowRight, Leaf, ShoppingBag, Sparkles, BookOpen } from 'lucide-react';
 
 export const HerbDetailView: React.FC = () => {
@@ -52,7 +53,7 @@ export const HerbDetailView: React.FC = () => {
         <div className="lg:col-span-5 space-y-4">
           <div className="aspect-4/3 rounded-2xl overflow-hidden bg-[#EAE2D5] border border-[#DDD3C3] shadow-xs relative">
             <img
-              src={herb.image}
+              src={resolveImageUrl(herb.image)}
               alt={herb.name}
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
@@ -200,7 +201,7 @@ export const HerbDetailView: React.FC = () => {
                 >
                   <div className="aspect-4/3 bg-[#EFE9DF] overflow-hidden">
                     <img
-                      src={prod.images[0]}
+                      src={resolveImageUrl(prod.images[0])}
                       alt={prod.name}
                       className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
                     />
