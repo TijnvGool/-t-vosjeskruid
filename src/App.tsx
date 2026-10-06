@@ -17,7 +17,8 @@ import { HerbDetailView } from './components/herbs/HerbDetailView';
 import { AboutView } from './components/about/AboutView';
 import { ContactView } from './components/contact/ContactView';
 import { CheckoutView } from './components/checkout/CheckoutView';
-import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AdminLoginView } from './components/admin/AdminLoginView';
+import { AdminLayout } from './components/admin/AdminLayout';
 import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -44,13 +45,15 @@ const AppContent: React.FC = () => {
       case 'assistant':
         return <ProductListView />;
       case 'admin':
-        return <AdminDashboard />;
+        return <AdminLoginView />;
+      case 'admin-dashboard':
+        return <AdminLayout />;
       default:
         return <HomeView />;
     }
   };
 
-  const isAdminView = currentRoute === 'admin';
+  const isAdminView = currentRoute === 'admin' || currentRoute === 'admin-dashboard';
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF8F5] text-[#223221]">

@@ -2,6 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { Product, Herb, Review, Order, SiteContent, CartItem, ApplicationCategory, ProductType } from '../types';
 import { initialProducts, initialHerbs, initialReviews, initialOrders, initialSiteContent } from '../data/mockData';
 import { resolveImageUrl } from '../assets/images';
+import { 
+  signInAdmin, 
+  signOutAdmin, 
+  getActiveAdminSession, 
+  subscribeToAuthChanges 
+} from '../services/firebaseAuth';
 
 export type Route = 
   | 'home' 
@@ -14,7 +20,17 @@ export type Route =
   | 'checkout' 
   | 'order-success' 
   | 'assistant' 
-  | 'admin';
+  | 'admin'
+  | 'admin-dashboard';
+
+export type AdminTab = 
+  | 'dashboard' 
+  | 'products' 
+  | 'herbs' 
+  | 'orders' 
+  | 'reviews' 
+  | 'website' 
+  | 'settings';
 
 interface Toast {
   text: string;
@@ -59,8 +75,13 @@ interface StoreContextType {
   siteContent: SiteContent;
   latestOrder: Order | null;
 
-  // Admin Auth
+  // Admin Auth & State
   isAdminAuthenticated: boolean;
+  adminUser: { email: string | null; uid: string } | null;
+  adminTab: AdminTab;
+  setAdminTab: (tab: AdminTab) => void;
+  loginAdminAsync: (email: string, pass: string) => Promise<{ email: string | null; uid: string }>;
+  logoutAdminAsync: () => Promise<void>;
   loginAdmin: (email: string, pass: string) => boolean;
   logoutAdmin: () => void;
 
@@ -207,10 +228,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [latestOrder, setLatestOrder] = useState<Order | null>(null);
 
-  // Admin Auth
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === 'true';
-  });
+  // Admin Auth & State
+  const [adminUser, setAdminUser] = useState<{ email: string | null; uid: string } | null>(() => getActiveAdminSession());
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => Boolean(getActiveAdminSession()));
+  const [adminTab, setAdminTab] = useState<AdminTab>('dashboard');
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthChanges((state) => {
+      setAdminUser(state.user);
+      setIsAdminAuthenticated(state.isAuthenticated);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Toast
   const [toast, setToast] = useState<Toast | null>(null);
@@ -247,28 +276,101 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem(STORAGE_KEYS.CONTENT, JSON.stringify(siteContent));
   }, [siteContent]);
 
-  // URL hash navigation support
+  // URL routing & path synchronization
   useEffect(() => {
-    const handleHash = () => {
+    const handleUrlSync = () => {
+      const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
       const hash = window.location.hash.replace('#', '');
+
+      // Deep links via hash (e.g. #product/p-1, #kruid/salie)
       if (hash.startsWith('product/')) {
         const pId = hash.replace('product/', '');
         setSelectedProductId(pId);
         setCurrentRoute('product-detail');
-      } else if (hash.startsWith('kruid/')) {
+        return;
+      }
+      if (hash.startsWith('kruid/')) {
         const hId = hash.replace('kruid/', '');
         setSelectedHerbId(hId);
         setCurrentRoute('herb-detail');
-      } else if (hash === 'admin') {
-        setCurrentRoute('admin');
-      } else if (['home', 'products', 'herbs', 'about', 'contact', 'checkout', 'assistant'].includes(hash)) {
-        setCurrentRoute(hash as Route);
+        return;
       }
+
+      // Real pathname: /admin or /admin/dashboard
+      if (pathname.startsWith('/admin')) {
+        const subRoute = pathname.replace('/admin', '').replace(/^\/+/, '');
+        
+        if (isAdminAuthenticated) {
+          if (['dashboard', 'products', 'herbs', 'orders', 'reviews', 'website', 'settings'].includes(subRoute)) {
+            setAdminTab(subRoute as AdminTab);
+          } else {
+            setAdminTab('dashboard');
+          }
+          setCurrentRoute('admin-dashboard');
+          if (pathname === '/admin') {
+            window.history.replaceState(null, '', '/admin/dashboard');
+          }
+        } else {
+          // Unauthenticated user attempting to view /admin/dashboard -> redirect to /admin login
+          if (pathname !== '/admin') {
+            window.history.replaceState(null, '', '/admin');
+          }
+          setCurrentRoute('admin');
+        }
+        return;
+      }
+
+      // Hash fallback for admin
+      if (hash === 'admin' || hash === 'admin-dashboard') {
+        if (isAdminAuthenticated) {
+          window.history.replaceState(null, '', '/admin/dashboard');
+          setCurrentRoute('admin-dashboard');
+        } else {
+          window.history.replaceState(null, '', '/admin');
+          setCurrentRoute('admin');
+        }
+        return;
+      }
+
+      // Public site routes
+      if (pathname === '/producten' || pathname === '/products' || hash === 'products') {
+        setCurrentRoute('products');
+        return;
+      }
+      if (pathname === '/kruiden' || pathname === '/herbs' || hash === 'herbs') {
+        setCurrentRoute('herbs');
+        return;
+      }
+      if (pathname === '/wie-ben-ik' || pathname === '/about' || hash === 'about') {
+        setCurrentRoute('about');
+        return;
+      }
+      if (pathname === '/contact' || hash === 'contact') {
+        setCurrentRoute('contact');
+        return;
+      }
+      if (pathname === '/afrekenen' || pathname === '/checkout' || hash === 'checkout') {
+        setCurrentRoute('checkout');
+        return;
+      }
+      if (pathname === '/assistant' || hash === 'assistant') {
+        setCurrentRoute('products');
+        setIsAssistantOpen(true);
+        return;
+      }
+
+      // Root path '/'
+      setCurrentRoute('home');
     };
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
+
+    handleUrlSync();
+    window.addEventListener('popstate', handleUrlSync);
+    window.addEventListener('hashchange', handleUrlSync);
+    return () => {
+      window.removeEventListener('popstate', handleUrlSync);
+      window.removeEventListener('hashchange', handleUrlSync);
+    };
+  }, [isAdminAuthenticated]);
 
   const navigate = (route: Route, params?: { productId?: string; herbId?: string }) => {
     if (params?.productId) {
@@ -277,8 +379,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else if (params?.herbId) {
       setSelectedHerbId(params.herbId);
       window.location.hash = `kruid/${params.herbId}`;
+    } else if (route === 'admin') {
+      window.history.pushState(null, '', '/admin');
+    } else if (route === 'admin-dashboard') {
+      window.history.pushState(null, '', '/admin/dashboard');
+    } else if (route === 'home') {
+      window.history.pushState(null, '', '/');
     } else {
-      window.location.hash = route === 'home' ? '' : route;
+      window.history.pushState(null, '', `/${route}`);
     }
     setCurrentRoute(route);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -328,26 +436,39 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return cart.reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
 
-  // Admin Auth
-  const loginAdmin = (email: string, pass: string): boolean => {
-    // Verified admin demo password check
-    if (
-      (email.trim().toLowerCase() === 'admin@vosjeskruid.nl' || email.trim().toLowerCase() === 'admin') &&
-      (pass === 'kruidentuin2026' || pass === 'admin')
-    ) {
+  // Admin Auth - Secure Firebase Authentication (No hardcoded credentials)
+  const loginAdminAsync = async (email: string, pass: string): Promise<{ email: string | null; uid: string }> => {
+    try {
+      const user = await signInAdmin(email, pass);
+      setAdminUser(user);
       setIsAdminAuthenticated(true);
-      localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
       showToast('Succesvol ingelogd in het beheerpaneel', 'success');
-      return true;
+      window.history.pushState(null, '', '/admin/dashboard');
+      setCurrentRoute('admin-dashboard');
+      return user;
+    } catch (err: any) {
+      const errorMsg = err?.message || 'Inloggen mislukt. Controleer je gegevens.';
+      showToast(errorMsg, 'warn');
+      throw err;
     }
-    showToast('Onjuist e-mailadres of wachtwoord', 'warn');
-    return false;
+  };
+
+  const logoutAdminAsync = async (): Promise<void> => {
+    await signOutAdmin();
+    setAdminUser(null);
+    setIsAdminAuthenticated(false);
+    showToast('Uitgelogd uit beheerpaneel', 'info');
+    window.history.pushState(null, '', '/admin');
+    setCurrentRoute('admin');
+  };
+
+  const loginAdmin = (email: string, pass: string): boolean => {
+    loginAdminAsync(email, pass).catch(() => {});
+    return true;
   };
 
   const logoutAdmin = () => {
-    setIsAdminAuthenticated(false);
-    localStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
-    showToast('Uitgelogd uit beheerpaneel', 'info');
+    logoutAdminAsync();
   };
 
   // CRUD Product
@@ -501,6 +622,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         siteContent,
         latestOrder,
         isAdminAuthenticated,
+        adminUser,
+        adminTab,
+        setAdminTab,
+        loginAdminAsync,
+        logoutAdminAsync,
         loginAdmin,
         logoutAdmin,
         addProduct,
