@@ -7,9 +7,9 @@ import {
   User 
 } from 'firebase/auth';
 
-// Read Vite environment variables (Vercel or local .env)
+// Read Vite environment variables (Vercel or local .env) with direct hardcoded apiKey for debug test
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  apiKey: "AIzaSYAB5-YqPxgB_rbNF2GchGQz4ba4jpROQFQ",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
@@ -18,12 +18,19 @@ const firebaseConfig = {
 };
 
 export const isFirebaseConfigured = (): boolean => {
-  return Boolean(
+  const configured = Boolean(
     firebaseConfig.apiKey &&
     firebaseConfig.authDomain &&
     firebaseConfig.projectId &&
     firebaseConfig.apiKey.trim().length > 5
   );
+  console.log("Firebase Debug Init:", {
+    apiKeyPrefix: firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 6) + "..." : "missing",
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId,
+    configured
+  });
+  return configured;
 };
 
 // Initialize Firebase App only if config is provided
